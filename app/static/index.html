@@ -254,16 +254,15 @@ function renderResults(results, total, ms) {
   const hasKey = !!localStorage.getItem('aifixdb_key');
   el.innerHTML = results.map(r => `
     <div class="result">
-      ${hasKey ? `<div class="votes-inline">
-        <button onclick="event.stopPropagation();doVote('${r.id}',1)">&#9650;</button>
+      <div class="votes-inline">
+        ${hasKey ? `<button onclick="event.stopPropagation();doVote('${r.id}',1)">&#9650;</button>` : ''}
         <span class="count">${r.votes||0}</span>
-        <button onclick="event.stopPropagation();doVote('${r.id}',-1)">&#9660;</button>
-      </div>` : ''}
+        ${hasKey ? `<button onclick="event.stopPropagation();doVote('${r.id}',-1)">&#9660;</button>` : ''}
+      </div>
       <div style="flex:1" onclick="showDetail('${r.id}')">
         <h3>${esc(r.title)}</h3>
         <div class="result-meta">
           ${(r.stack||[]).map(s => `<span class="tag">${esc(s)}</span>`).join('')}
-          ${!hasKey && r.votes ? `<span>+${r.votes}</span>` : ''}
           ${r.relevance_score ? `<span>${r.relevance_score}</span>` : ''}
         </div>
       </div>
