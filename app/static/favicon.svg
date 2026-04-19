@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#000"/>
+  <!-- Stylized "lightning bolt through nodes" — fix + database -->
+  <!-- Top node -->
+  <circle cx="16" cy="6" r="2.5" fill="none" stroke="#f0f0fa" stroke-width="1.2"/>
+  <!-- Lightning/fix path connecting nodes -->
+  <polyline points="16,8.5 13,14 18,15 12,24" fill="none" stroke="#f0f0fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Side nodes (database/constellation) -->
+  <circle cx="23" cy="13" r="1.8" fill="none" stroke="#f0f0fa" stroke-width="1" opacity="0.5"/>
+  <circle cx="22" cy="22" r="1.8" fill="none" stroke="#f0f0fa" stroke-width="1" opacity="0.35"/>
+  <!-- Connection lines to side nodes -->
+  <line x1="17.8" y1="7" x2="21.2" y2="12" stroke="#f0f0fa" stroke-width="0.7" opacity="0.4"/>
+  <line x1="14" y1="20" x2="20.2" y2="21.5" stroke="#f0f0fa" stroke-width="0.7" opacity="0.3"/>
+</svg>

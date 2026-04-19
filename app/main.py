@@ -50,3 +50,6 @@ async def index():
 @app.get("/privacy")
 async def privacy():
     return FileResponse(STATIC_DIR / "privacy.html")
+
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
