@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from .database import init_db, close_db, run_migrations
 from .ratelimit import RateLimitMiddleware
-from .routes import auth_routes, problems, votes, admin
+from .routes import auth_routes, problems, votes, admin, ideas
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.include_router(auth_routes.router, prefix="/api/v1")
 app.include_router(problems.router, prefix="/api/v1")
 app.include_router(votes.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(ideas.router, prefix="/api/v1")
 
 STATIC_DIR = Path(__file__).parent / "static"
 

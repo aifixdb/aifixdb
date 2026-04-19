@@ -79,6 +79,7 @@ a:hover{text-decoration:underline}
 
 <div class="nav">
   <a class="active" onclick="showTab('search')">Search</a>
+  <a onclick="showTab('ideas')">Ideas</a>
   <a onclick="showTab('register')">Get API Key</a>
 </div>
 
@@ -97,7 +98,21 @@ a:hover{text-decoration:underline}
   </div>
 </div>
 
-<div class="search-box">
+<div class="ideas-box" id="ideas-box" style="display:none;max-width:640px;margin:0 auto 2rem;padding:0 1rem">
+  <div id="idea-form-wrap" style="display:none;margin-bottom:1rem">
+    <form class="search-form" onsubmit="submitIdea(event)">
+      <input type="text" id="idea-title" placeholder="Your idea..." required maxlength="300">
+      <div class="search-row">
+        <input type="text" id="idea-desc" placeholder="Details (optional)">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+  <div style="text-align:center;margin-bottom:1rem;font-size:.85rem;color:#666" id="ideas-login-hint"></div>
+  <div id="ideas-list"><div class="loading">Loading ideas...</div></div>
+</div>
+
+<div class="search-box" id="search-box">
   <form class="search-form" onsubmit="doSearch(event)">
     <input type="text" id="q-error" placeholder="Paste error message..." autofocus>
     <div class="search-row">
@@ -180,13 +195,21 @@ function renderResults(results, total, ms) {
     return;
   }
 
+  const hasKey = !!localStorage.getItem('aifixdb_key');
   el.innerHTML = results.map(r => `
-    <div class="result" onclick="showDetail('${r.id}')">
-      <h3>${esc(r.title)}</h3>
-      <div class="result-meta">
-        ${(r.stack||[]).map(s => `<span class="tag">${esc(s)}</span>`).join('')}
-        ${r.votes ? `<span class="votes">+${r.votes}</span>` : ''}
-        ${r.relevance_score ? `<span>score: ${r.relevance_score}</span>` : ''}
+    <div class="result" style="display:flex;align-items:center;gap:.75rem">
+      ${hasKey ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:36px">
+        <button onclick="event.stopPropagation();doVote('${r.id}',1)" style="background:none;border:none;color:#4a4;cursor:pointer;font-size:1rem">&#9650;</button>
+        <span style="color:#7eb8ff;font-size:.85rem;font-weight:600">${r.votes||0}</span>
+        <button onclick="event.stopPropagation();doVote('${r.id}',-1)" style="background:none;border:none;color:#a44;cursor:pointer;font-size:1rem">&#9660;</button>
+      </div>` : ''}
+      <div style="flex:1;cursor:pointer" onclick="showDetail('${r.id}')">
+        <h3>${esc(r.title)}</h3>
+        <div class="result-meta">
+          ${(r.stack||[]).map(s => `<span class="tag">${esc(s)}</span>`).join('')}
+          ${!hasKey && r.votes ? `<span class="votes">+${r.votes}</span>` : ''}
+          ${r.relevance_score ? `<span>score: ${r.relevance_score}</span>` : ''}
+        </div>
       </div>
     </div>
   `).join('');
@@ -242,16 +265,101 @@ function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.
 
 function showTab(tab) {
   document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('register-box').style.display = 'none';
+  document.getElementById('search-box').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('ideas-box').style.display = 'none';
+  document.getElementById('stats').style.display = 'none';
+
+  const tabs = document.querySelectorAll('.nav a');
   if (tab === 'register') {
     document.getElementById('register-box').style.display = 'block';
-    document.querySelector('.search-box').style.display = 'none';
-    document.getElementById('results').style.display = 'none';
-    document.querySelectorAll('.nav a')[1].classList.add('active');
+    tabs[2].classList.add('active');
+  } else if (tab === 'ideas') {
+    document.getElementById('ideas-box').style.display = 'block';
+    tabs[1].classList.add('active');
+    loadIdeas();
   } else {
-    document.getElementById('register-box').style.display = 'none';
-    document.querySelector('.search-box').style.display = 'block';
+    document.getElementById('search-box').style.display = 'block';
     document.getElementById('results').style.display = 'block';
-    document.querySelectorAll('.nav a')[0].classList.add('active');
+    document.getElementById('stats').style.display = 'flex';
+    tabs[0].classList.add('active');
+  }
+}
+
+async function loadIdeas() {
+  const hasKey = !!localStorage.getItem('aifixdb_key');
+  const hint = document.getElementById('ideas-login-hint');
+
+  if (hasKey) {
+    document.getElementById('idea-form-wrap').style.display = 'block';
+    hint.textContent = '';
+  } else {
+    document.getElementById('idea-form-wrap').style.display = 'none';
+    hint.textContent = 'Get an API key to submit ideas and vote.';
+  }
+
+  const res = await fetch(`${API}/ideas?sort=votes`);
+  const ideas = await res.json();
+  const el = document.getElementById('ideas-list');
+
+  if (!ideas || ideas.length === 0) {
+    el.innerHTML = '<div class="empty">No ideas yet. Be the first to suggest something!</div>';
+    return;
+  }
+
+  el.innerHTML = ideas.map(i => `
+    <div class="result" style="display:flex;align-items:center;gap:.75rem">
+      ${hasKey ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:36px">
+        <button onclick="voteIdea('${i.id}',1)" style="background:none;border:none;color:#4a4;cursor:pointer;font-size:1rem">&#9650;</button>
+        <span style="color:#7eb8ff;font-size:.85rem;font-weight:600" id="idea-votes-${i.id}">${i.votes}</span>
+        <button onclick="voteIdea('${i.id}',-1)" style="background:none;border:none;color:#a44;cursor:pointer;font-size:1rem">&#9660;</button>
+      </div>` : `<span style="color:#7eb8ff;font-size:.85rem;font-weight:600;min-width:36px;text-align:center">${i.votes}</span>`}
+      <div style="flex:1">
+        <h3 style="font-size:.95rem;font-weight:600">${esc(i.title)}</h3>
+        ${i.description ? `<p style="color:#888;font-size:.8rem;margin-top:.25rem">${esc(i.description)}</p>` : ''}
+        <div class="result-meta" style="margin-top:.3rem">
+          ${i.status !== 'open' ? `<span class="tag" style="background:#1a3322;color:#4a4">${i.status}</span>` : ''}
+          ${i.submitted_by ? `<span style="color:#555">${esc(i.submitted_by)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function submitIdea(e) {
+  e.preventDefault();
+  const key = localStorage.getItem('aifixdb_key');
+  if (!key) return;
+  const title = document.getElementById('idea-title').value.trim();
+  const description = document.getElementById('idea-desc').value.trim() || null;
+  const res = await fetch(`${API}/ideas`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`},
+    body: JSON.stringify({title, description})
+  });
+  if (res.ok) {
+    document.getElementById('idea-title').value = '';
+    document.getElementById('idea-desc').value = '';
+    loadIdeas();
+  } else {
+    const data = await res.json();
+    alert(data.detail || 'Error submitting idea');
+  }
+}
+
+async function voteIdea(id, vote) {
+  const key = localStorage.getItem('aifixdb_key');
+  if (!key) return;
+  const res = await fetch(`${API}/ideas/${id}/vote`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`},
+    body: JSON.stringify({vote})
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const el = document.getElementById(`idea-votes-${id}`);
+    if (el) el.textContent = data.votes;
   }
 }
 
