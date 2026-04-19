@@ -89,9 +89,7 @@ a:hover{text-decoration:underline}
     <button type="submit" id="reg-btn">Get API Key</button>
   </form>
   <div class="register-result" id="reg-result">
-    <div>Your API key:</div>
-    <div class="key" id="reg-key"></div>
-    <div class="warn">Save this key now — you cannot retrieve it later.</div>
+    <div id="reg-msg"></div>
   </div>
 </div>
 
@@ -113,6 +111,16 @@ a:hover{text-decoration:underline}
 
 <div class="detail-overlay" id="overlay" onclick="if(event.target===this)closeDetail()">
   <div class="detail" id="detail"></div>
+</div>
+
+<div style="max-width:640px;margin:0 auto 1rem;padding:0 1rem">
+  <details style="font-size:.8rem;color:#555">
+    <summary style="cursor:pointer">Have an API key? Enter it to enable voting</summary>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem">
+      <input type="text" id="api-key-input" placeholder="afx_..." style="flex:1;background:#0a0a0a;border:1px solid #333;border-radius:6px;padding:.4rem .6rem;color:#e0e0e0;font-size:.8rem;font-family:monospace">
+      <button onclick="saveKey()" style="background:#222;color:#888;border:1px solid #333;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.8rem">Save</button>
+    </div>
+  </details>
 </div>
 
 <div class="footer">
@@ -193,13 +201,37 @@ async function showDetail(id) {
       <div class="result-meta">${(p.stack||[]).map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>
     </section>
     ${p.environment ? `<section><h4>Environment</h4><pre>${esc(JSON.stringify(p.environment, null, 2))}</pre></section>` : ''}
-    <section><h4>Votes</h4><span class="votes">${p.votes >= 0 ? '+' : ''}${p.votes}</span></section>
+    <section>
+      <h4>Helpful?</h4>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button onclick="doVote('${p.id}',1)" style="background:#1a2e1a;color:#4a4;border:1px solid #2a3;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.9rem">+1</button>
+        <span class="votes" id="vote-count-${p.id}" style="font-size:1.1rem;min-width:2rem;text-align:center">${p.votes >= 0 ? '+' : ''}${p.votes}</span>
+        <button onclick="doVote('${p.id}',-1)" style="background:#2e1a1a;color:#a44;border:1px solid #a33;border-radius:6px;padding:.4rem .8rem;cursor:pointer;font-size:.9rem">-1</button>
+      </div>
+    </section>
   `;
   document.getElementById('overlay').classList.add('open');
 }
 
 function closeDetail() { document.getElementById('overlay').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+async function doVote(id, vote) {
+  const key = localStorage.getItem('aifixdb_key');
+  if (!key) { alert('You need an API key to vote. Register in the "Get API Key" tab.'); return; }
+  const res = await fetch(`${API}/problems/${id}/vote`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`},
+    body: JSON.stringify({vote})
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const el = document.getElementById(`vote-count-${id}`);
+    if (el) el.textContent = (data.votes >= 0 ? '+' : '') + data.votes;
+  } else if (res.status === 401) {
+    alert('Invalid API key. Check your key or register again.');
+  }
+}
 
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -238,9 +270,9 @@ async function doRegister(e) {
     });
     const data = await res.json();
     if (res.ok) {
-      document.getElementById('reg-key').textContent = data.api_key;
+      document.getElementById('reg-msg').textContent = data.message || 'Verification email sent. Check your inbox.';
       document.getElementById('reg-result').style.display = 'block';
-      btn.textContent = 'Done';
+      btn.textContent = 'Email sent';
     } else {
       btn.textContent = data.detail || 'Error';
       setTimeout(() => { btn.disabled = false; btn.textContent = 'Get API Key'; }, 3000);
@@ -250,6 +282,17 @@ async function doRegister(e) {
     setTimeout(() => { btn.disabled = false; btn.textContent = 'Get API Key'; }, 3000);
   }
 }
+
+function saveKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (key) {
+    localStorage.setItem('aifixdb_key', key);
+    document.getElementById('api-key-input').value = '';
+    alert('API key saved. You can now vote on fixes.');
+  }
+}
+const savedKey = localStorage.getItem('aifixdb_key');
+if (savedKey) { const el = document.getElementById('api-key-input'); if (el) el.placeholder = 'Key saved (afx_...)'; }
 
 init();
 </script>

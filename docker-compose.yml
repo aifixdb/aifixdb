@@ -7,6 +7,12 @@ services:
       - ADMIN_TOKEN=${ADMIN_TOKEN:-}
       - RATE_LIMIT_AUTH=${RATE_LIMIT_AUTH:-100}
       - RATE_LIMIT_ANON=${RATE_LIMIT_ANON:-30}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_SENDER=${SMTP_SENDER:-noreply@nocodework.io}
+      - PUBLIC_URL=${PUBLIC_URL:-https://aifixdb.nocodework.pl}
     depends_on:
       db:
         condition: service_healthy
