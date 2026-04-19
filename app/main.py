@@ -1,8 +1,12 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from .database import init_db, close_db, run_migrations
-from .routes import auth_routes, problems, votes
+from .ratelimit import RateLimitMiddleware
+from .routes import auth_routes, problems, votes, admin
 
 
 @asynccontextmanager
@@ -22,11 +26,21 @@ app = FastAPI(
     redoc_url=None,
 )
 
+app.add_middleware(RateLimitMiddleware)
+
 app.include_router(auth_routes.router, prefix="/api/v1")
 app.include_router(problems.router, prefix="/api/v1")
 app.include_router(votes.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/")
+async def index():
+    return FileResponse(STATIC_DIR / "index.html")
