@@ -4,6 +4,9 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://aifixdb:${POSTGRES_PASSWORD:-changeme}@db:5432/aifixdb
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
+      - RATE_LIMIT_AUTH=${RATE_LIMIT_AUTH:-100}
+      - RATE_LIMIT_ANON=${RATE_LIMIT_ANON:-30}
     depends_on:
       db:
         condition: service_healthy
