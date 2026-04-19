@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    container_name: aifixdb-app
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://aifixdb:${POSTGRES_PASSWORD:-changeme}@db:5432/aifixdb
@@ -27,6 +28,7 @@ services:
 
   db:
     image: postgres:16-alpine
+    container_name: aifixdb-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: aifixdb
