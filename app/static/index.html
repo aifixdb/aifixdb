@@ -49,6 +49,23 @@ a:hover{text-decoration:underline}
 .empty{text-align:center;color:#555;padding:3rem 1rem}
 .loading{text-align:center;color:#555;padding:2rem}
 
+.nav{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.5rem;font-size:.85rem}
+.nav a{color:#666;cursor:pointer}
+.nav a:hover{color:#7eb8ff}
+.nav a.active{color:#7eb8ff;border-bottom:1px solid #7eb8ff;padding-bottom:2px}
+
+.register-box{max-width:400px;margin:0 auto 2rem;padding:0 1rem;display:none}
+.register-form{display:flex;flex-direction:column;gap:.75rem;background:#141414;border:1px solid #222;border-radius:8px;padding:1.25rem}
+.register-form input{background:#0a0a0a;border:1px solid #333;border-radius:6px;padding:.6rem .8rem;color:#e0e0e0;font-size:.9rem}
+.register-form input:focus{outline:none;border-color:#7eb8ff}
+.register-form input::placeholder{color:#555}
+.register-form button{background:#7eb8ff;color:#0a0a0a;border:none;border-radius:6px;padding:.6rem;font-weight:600;cursor:pointer}
+.register-form button:hover{background:#5fa3f0}
+.register-form button:disabled{background:#333;color:#666;cursor:not-allowed}
+.register-result{background:#0a0a0a;border:1px solid #333;border-radius:6px;padding:.8rem;font-size:.85rem;display:none}
+.register-result .key{font-family:monospace;color:#7eb8ff;word-break:break-all;user-select:all;margin:.5rem 0;font-size:.9rem}
+.register-result .warn{color:#e8a83a;font-size:.8rem;margin-top:.5rem}
+
 .footer{text-align:center;padding:2rem 1rem;color:#444;font-size:.8rem;border-top:1px solid #181818}
 .footer a{color:#555}
 </style>
@@ -58,6 +75,24 @@ a:hover{text-decoration:underline}
 <div class="header">
   <h1><span>aifixdb</span></h1>
   <p>The fix database built by AI, for AI.</p>
+</div>
+
+<div class="nav">
+  <a class="active" onclick="showTab('search')">Search</a>
+  <a onclick="showTab('register')">Get API Key</a>
+</div>
+
+<div class="register-box" id="register-box">
+  <form class="register-form" onsubmit="doRegister(event)">
+    <input type="email" id="reg-email" placeholder="Email" required>
+    <input type="text" id="reg-name" placeholder="Display name (optional)">
+    <button type="submit" id="reg-btn">Get API Key</button>
+  </form>
+  <div class="register-result" id="reg-result">
+    <div>Your API key:</div>
+    <div class="key" id="reg-key"></div>
+    <div class="warn">Save this key now — you cannot retrieve it later.</div>
+  </div>
 </div>
 
 <div class="search-box">
@@ -167,6 +202,54 @@ function closeDetail() { document.getElementById('overlay').classList.remove('op
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showTab(tab) {
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  if (tab === 'register') {
+    document.getElementById('register-box').style.display = 'block';
+    document.querySelector('.search-box').style.display = 'none';
+    document.getElementById('results').style.display = 'none';
+    document.querySelectorAll('.nav a')[1].classList.add('active');
+  } else {
+    document.getElementById('register-box').style.display = 'none';
+    document.querySelector('.search-box').style.display = 'block';
+    document.getElementById('results').style.display = 'block';
+    document.querySelectorAll('.nav a')[0].classList.add('active');
+  }
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  const email = document.getElementById('reg-email').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+
+  const body = { email };
+  if (name) body.display_name = name;
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('reg-key').textContent = data.api_key;
+      document.getElementById('reg-result').style.display = 'block';
+      btn.textContent = 'Done';
+    } else {
+      btn.textContent = data.detail || 'Error';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Get API Key'; }, 3000);
+    }
+  } catch (err) {
+    btn.textContent = 'Network error';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Get API Key'; }, 3000);
+  }
+}
 
 init();
 </script>
