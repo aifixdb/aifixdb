@@ -44,3 +44,8 @@ async def health():
 @app.get("/")
 async def index():
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/privacy")
+async def privacy():
+    return FileResponse(STATIC_DIR / "privacy.html")
