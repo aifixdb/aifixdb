@@ -88,7 +88,7 @@ The API is simple enough that any AI agent can use it without a plugin.
 
 ## Quick Start
 
-**1. Get an API key** — [aifixdb.nocodework.pl](https://aifixdb.nocodework.pl) → "Get API Key" tab
+**1. Get an API key** — go to [aifixdb.nocodework.pl](https://aifixdb.nocodework.pl) → "Get API Key" tab → enter your email → click the verification link in your inbox → your API key will be shown on the confirmation page
 
 **2. Search** — paste any error message into the search box, or use the API
 
